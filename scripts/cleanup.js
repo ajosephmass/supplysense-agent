@@ -16,6 +16,9 @@
  */
 
 const { execSync } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 // Colors for console output
 const colors = {
@@ -317,6 +320,72 @@ async function deleteCDKStacks() {
   }
 }
 
+async function retryDeleteStacks(stackNames) {
+  logHeader('🔄 Retrying Stack Deletion');
+  
+  // Wait a bit for dependencies to clear
+  logInfo('Waiting 10 seconds for dependencies to clear...');
+  await new Promise(resolve => setTimeout(resolve, 10000));
+  
+  for (const stackName of stackNames) {
+    try {
+      // Check if stack still exists
+      const statusResult = execAWS(
+        `aws cloudformation describe-stacks --stack-name ${stackName} --region ${region} --output json`,
+        { silent: true }
+      );
+      
+      if (!statusResult.success) {
+        logInfo(`Stack ${stackName} does not exist, skipping`);
+        continue;
+      }
+      
+      const stackData = JSON.parse(statusResult.output);
+      const stack = stackData.Stacks[0];
+      const stackStatus = stack.StackStatus;
+      
+      if (stackStatus === 'DELETE_COMPLETE') {
+        logInfo(`Stack ${stackName} already deleted`);
+        continue;
+      }
+      
+      logInfo(`Retrying deletion of stack: ${stackName} (current status: ${stackStatus})`);
+      
+      // Try CDK destroy first
+      const cdkResult = execAWS(`npx cdk destroy ${stackName} --force`, { 
+        cwd: process.cwd()
+      });
+      
+      if (cdkResult.success) {
+        logSuccess(`Stack ${stackName} deleted via CDK`);
+      } else {
+        // If CDK fails, try direct CloudFormation delete
+        logInfo(`CDK destroy failed, trying direct CloudFormation delete...`);
+        const cfResult = execAWS(
+          `aws cloudformation delete-stack --stack-name ${stackName} --region ${region}`,
+          { silent: true }
+        );
+        
+        if (cfResult.success) {
+          logInfo(`Stack ${stackName} deletion initiated`);
+          // Wait for deletion
+          await new Promise(resolve => setTimeout(resolve, 30000));
+        } else {
+          // Try force delete if it's in DELETE_FAILED state
+          if (stackStatus === 'DELETE_FAILED') {
+            logInfo(`Stack is in DELETE_FAILED state, attempting force delete...`);
+            await forceDeleteFailedStack(stackName);
+          } else {
+            logWarning(`Failed to delete stack ${stackName}: ${cfResult.error}`);
+          }
+        }
+      }
+    } catch (error) {
+      logWarning(`Error retrying deletion of stack ${stackName}: ${error.message}`);
+    }
+  }
+}
+
 async function deleteECRRepositories() {
   logHeader('🗑️  Deleting ECR Repositories');
   
@@ -349,8 +418,10 @@ async function deleteECRRepositories() {
         try {
           let hasMoreImages = true;
           let deletedCount = 0;
+          let retryCount = 0;
+          const maxRetries = 10; // Prevent infinite loops
           
-          while (hasMoreImages) {
+          while (hasMoreImages && retryCount < maxRetries) {
             const imagesResult = execAWS(
               `aws ecr list-images --repository-name ${repoName} --region ${region} --output json`,
               { silent: true }
@@ -368,10 +439,11 @@ async function deleteECRRepositories() {
               break;
             }
             
-            logInfo(`  Deleting ${imageIds.length} images (batch ${Math.floor(deletedCount / 100) + 1})...`);
+            logInfo(`  Found ${imageIds.length} images, deleting...`);
             
             // Delete in batches (ECR has limits)
             const batchSize = 100;
+            let batchDeleted = 0;
             for (let i = 0; i < imageIds.length; i += batchSize) {
               const batch = imageIds.slice(i, i + batchSize);
               const batchJson = JSON.stringify(batch.map(img => {
@@ -381,15 +453,64 @@ async function deleteECRRepositories() {
                 return id;
               }).filter(img => Object.keys(img).length > 0));
               
-              execAWS(
-                `aws ecr batch-delete-image --repository-name ${repoName} --image-ids '${batchJson}' --region ${region}`,
-                { silent: true }
-              );
-              deletedCount += batch.length;
+              if (batchJson === '[]') {
+                // Skip empty batches
+                continue;
+              }
+              
+              // Write JSON to temp file for reliable cross-platform handling
+              const tempFile = path.join(os.tmpdir(), `ecr-delete-${Date.now()}-${Math.random().toString(36).substring(7)}.json`);
+              
+              // Write JSON to temp file for reliable cross-platform handling
+              let deleteResult;
+              try {
+                fs.writeFileSync(tempFile, batchJson, 'utf8');
+                
+                // On Windows, use forward slashes for file:// URLs
+                const filePath = process.platform === 'win32' 
+                  ? tempFile.replace(/\\/g, '/')
+                  : tempFile;
+                
+                deleteResult = execAWS(
+                  `aws ecr batch-delete-image --repository-name ${repoName} --image-ids file://${filePath} --region ${region} --output json`,
+                  { silent: true }
+                );
+                
+                // Clean up temp file
+                try {
+                  fs.unlinkSync(tempFile);
+                } catch (unlinkError) {
+                  // Ignore cleanup errors
+                }
+              } catch (fileError) {
+                logWarning(`  Could not use temp file: ${fileError.message}, trying direct JSON...`);
+                // Fallback: try with JSON as string (may not work on all platforms)
+                // Escape the JSON properly for the shell
+                const escapedJson = batchJson.replace(/"/g, '\\"');
+                deleteResult = execAWS(
+                  `aws ecr batch-delete-image --repository-name ${repoName} --image-ids "${escapedJson}" --region ${region} --output json`,
+                  { silent: true }
+                );
+              }
+              
+              if (deleteResult && deleteResult.success) {
+                const deleteData = JSON.parse(deleteResult.output);
+                const failed = (deleteData.imageIds || []).length;
+                const succeeded = batch.length - failed;
+                batchDeleted += succeeded;
+                
+                if (failed > 0) {
+                  logWarning(`  ${failed} images failed to delete (may be in use)`);
+                }
+              } else if (deleteResult) {
+                logWarning(`  Batch delete failed: ${deleteResult.error}`);
+              }
             }
             
+            deletedCount += batchDeleted;
+            
             // Wait a moment for deletion to propagate
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 3000));
             
             // Check if there are more images
             const checkResult = execAWS(
@@ -399,7 +520,20 @@ async function deleteECRRepositories() {
             
             if (checkResult.success) {
               const checkData = JSON.parse(checkResult.output);
-              hasMoreImages = (checkData.imageIds || []).length > 0;
+              const remainingImages = (checkData.imageIds || []).length;
+              hasMoreImages = remainingImages > 0;
+              
+              if (hasMoreImages && batchDeleted === 0) {
+                // No images were deleted this iteration, increment retry count
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                  logWarning(`  Maximum retries reached. ${remainingImages} images may still exist.`);
+                  break;
+                }
+              } else if (batchDeleted > 0) {
+                // Reset retry count if we made progress
+                retryCount = 0;
+              }
             } else {
               hasMoreImages = false;
             }
@@ -409,6 +543,8 @@ async function deleteECRRepositories() {
             logInfo(`  Deleted ${deletedCount} images total`);
             // Wait a bit more for ECR to process deletions
             await new Promise(resolve => setTimeout(resolve, 3000));
+          } else if (retryCount >= maxRetries) {
+            logWarning(`  Could not delete all images after ${maxRetries} attempts`);
           }
         } catch (imgError) {
           logWarning(`  Could not delete images: ${imgError.message}`);
@@ -833,6 +969,9 @@ async function main() {
     
     // Step 3: Delete DynamoDB tables (can be done anytime)
     await deleteDynamoDBTables();
+    
+    // Step 4: Retry deleting AgentCore and Tables stacks (they may have failed due to dependencies)
+    await retryDeleteStacks(['SupplySenseAgentCoreStack', 'SupplySenseTablesStack']);
     
     logHeader('✅ Cleanup Complete');
     logSuccess('All SupplySense resources have been deleted (or attempted)');
