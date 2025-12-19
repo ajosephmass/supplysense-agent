@@ -122,29 +122,35 @@ async function seedTable(tableName, data, options = {}) {
   
   for (const item of data) {
     try {
+      let conditionExpression;
+      let expressionAttributeNames;
+      
+      // Set condition expression based on table (only if not forcing)
+      if (!options.force) {
+        if (tableName.includes('inventory')) {
+          conditionExpression = 'attribute_not_exists(#productId) AND attribute_not_exists(#locationId)';
+          expressionAttributeNames = { '#productId': 'productId', '#locationId': 'locationId' };
+        } else if (tableName.includes('orders')) {
+          conditionExpression = 'attribute_not_exists(#orderId)';
+          expressionAttributeNames = { '#orderId': 'orderId' };
+        } else if (tableName.includes('suppliers')) {
+          conditionExpression = 'attribute_not_exists(#supplierId)';
+          expressionAttributeNames = { '#supplierId': 'supplierId' };
+        } else if (tableName.includes('logistics')) {
+          conditionExpression = 'attribute_not_exists(#shipmentId)';
+          expressionAttributeNames = { '#shipmentId': 'shipmentId' };
+        } else if (tableName.includes('demand-forecast')) {
+          conditionExpression = 'attribute_not_exists(#productId) AND attribute_not_exists(#forecastDate)';
+          expressionAttributeNames = { '#productId': 'productId', '#forecastDate': 'forecastDate' };
+        }
+      }
+      
       const command = new PutCommand({
         TableName: tableName,
         Item: item,
-        ...(options.force ? {} : { ConditionExpression: 'attribute_not_exists(#pk)' })
+        ...(conditionExpression ? { ConditionExpression: conditionExpression } : {}),
+        ...(expressionAttributeNames ? { ExpressionAttributeNames: expressionAttributeNames } : {})
       });
-      
-      // Add primary key condition based on table
-      if (tableName.includes('inventory')) {
-        command.input.ConditionExpression = options.force ? undefined : 'attribute_not_exists(productId) AND attribute_not_exists(locationId)';
-        command.input.ExpressionAttributeNames = options.force ? undefined : { '#pk': 'productId' };
-      } else if (tableName.includes('orders')) {
-        command.input.ConditionExpression = options.force ? undefined : 'attribute_not_exists(orderId)';
-        command.input.ExpressionAttributeNames = options.force ? undefined : { '#pk': 'orderId' };
-      } else if (tableName.includes('suppliers')) {
-        command.input.ConditionExpression = options.force ? undefined : 'attribute_not_exists(supplierId)';
-        command.input.ExpressionAttributeNames = options.force ? undefined : { '#pk': 'supplierId' };
-      } else if (tableName.includes('logistics')) {
-        command.input.ConditionExpression = options.force ? undefined : 'attribute_not_exists(shipmentId)';
-        command.input.ExpressionAttributeNames = options.force ? undefined : { '#pk': 'shipmentId' };
-      } else if (tableName.includes('demand-forecast')) {
-        command.input.ConditionExpression = options.force ? undefined : 'attribute_not_exists(productId) AND attribute_not_exists(forecastDate)';
-        command.input.ExpressionAttributeNames = options.force ? undefined : { '#pk': 'productId' };
-      }
       
       await docClient.send(command);
       successCount++;

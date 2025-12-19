@@ -1,6 +1,6 @@
 # SupplySense Scripts
 
-Utility scripts for deployment and data management.
+Utility scripts for data management and cleanup.
 
 ## Available Scripts
 
@@ -21,23 +21,16 @@ Options:
 - Seeds inventory, orders, suppliers, logistics, and demand forecast data
 - Uses data from `data/mock-data.json`
 
-### deploy-complete-system.js
-Deploys the complete SupplySense system.
-
+**Example:**
 ```bash
-node scripts/deploy-complete-system.js
-```
+# Seed data (skips existing items)
+node scripts/seed-data.js
 
-**What it does:**
-- Deploys all CDK stacks in order
-- Waits for each stack to complete
-- Reports deployment status
+# Force overwrite existing data
+node scripts/seed-data.js --force
 
-### deploy-complete-system.sh
-Bash version of the deployment script.
-
-```bash
-./scripts/deploy-complete-system.sh
+# Verbose output
+node scripts/seed-data.js --verbose
 ```
 
 ### cleanup.js
@@ -69,17 +62,14 @@ node scripts/cleanup.js --force
 node scripts/cleanup.js --force --skip-tables
 ```
 
-**Note**: This script requires AWS CLI to be configured and has permissions for all resources.
+**Note**: This script requires AWS CLI to be configured and has permissions for all resources. Some custom resources (SNS logging) may fail to delete due to a known CloudFormation bug, but these are configuration-only resources and can be safely ignored.
 
 ## Usage
 
-### Fresh Deployment
+### After Deployment
 
 ```bash
-# 1. Deploy infrastructure
-node scripts/deploy-complete-system.js
-
-# 2. Seed sample data
+# Seed sample data after deploying infrastructure
 node scripts/seed-data.js
 ```
 
@@ -88,6 +78,13 @@ node scripts/seed-data.js
 ```bash
 # Clear and reseed data (useful before testing)
 node scripts/seed-data.js --force
+```
+
+### Complete Cleanup
+
+```bash
+# Remove all resources (use with caution)
+node scripts/cleanup.js --force
 ```
 
 ## Data Files
