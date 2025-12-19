@@ -53,6 +53,7 @@ coverage/
 # Reference/Archive folders (not part of the solution)
 archive/
 reference/
+_archive_snapshot/
 *.bak
 
 # Temporary files
