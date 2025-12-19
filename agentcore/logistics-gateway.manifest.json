@@ -1,0 +1,21 @@
+{
+  "schema": "2024-09-01",
+  "name": "supplysense-logistics-gateway",
+  "tools": [
+    {
+      "name": "optimize_routes",
+      "method": "POST",
+      "url": "/v1/logistics/routes",
+      "description": "Optimize delivery routes and logistics for orders. JSON body: {order_id, urgency?, constraints?}."
+    },
+    {
+      "name": "calculate_shipping_options",
+      "method": "POST",
+      "url": "/v1/logistics/shipping",
+      "description": "Calculate available shipping options and costs for orders. JSON body: {order_id, destination, urgency?}."
+    }
+  ],
+  "auth": {
+    "type": "iam"
+  }
+}

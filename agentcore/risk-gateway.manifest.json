@@ -1,0 +1,21 @@
+{
+  "schema": "2024-09-01",
+  "name": "supplysense-risk-gateway",
+  "tools": [
+    {
+      "name": "assess_supply_chain_risks",
+      "method": "POST",
+      "url": "/v1/risk/assess",
+      "description": "Assess supply chain risks across inventory, suppliers, and logistics. JSON body: {timeframe?, focus_area?}."
+    },
+    {
+      "name": "analyze_disruption_impact",
+      "method": "POST",
+      "url": "/v1/risk/disruption",
+      "description": "Analyze the impact of supply chain disruptions. JSON body: {disruption_type, affected_entities, severity?}."
+    }
+  ],
+  "auth": {
+    "type": "iam"
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "inventory": [
+    {
+      "productId": "PROD-001",
+      "locationId": "WH-EAST",
+      "currentStock": 150,
+      "reservedStock": 20,
+      "availableStock": 130,
+      "reorderPoint": 50,
+      "maxStock": 300,
+      "lastUpdated": "2024-10-22T10:00:00Z"
+    },
+    {
+      "productId": "PROD-001",
+      "locationId": "WH-WEST",
+      "currentStock": 80,
+      "reservedStock": 15,
+      "availableStock": 65,
+      "reorderPoint": 40,
+      "maxStock": 200,
+      "lastUpdated": "2024-10-22T10:00:00Z"
+    },
+    {
+      "productId": "PROD-002",
+      "locationId": "WH-EAST",
+      "currentStock": 25,
+      "reservedStock": 10,
+      "availableStock": 15,
+      "reorderPoint": 30,
+      "maxStock": 150,
+      "lastUpdated": "2024-10-22T10:00:00Z"
+    },
+    {
+      "productId": "PROD-003",
+      "locationId": "WH-CENTRAL",
+      "currentStock": 0,
+      "reservedStock": 0,
+      "availableStock": 0,
+      "reorderPoint": 20,
+      "maxStock": 100,
+      "lastUpdated": "2024-10-22T10:00:00Z"
+    }
+  ],
+  "orders": [
+    {
+      "orderId": "ORD-001",
+      "customerId": "CUST-001",
+      "productIds": ["PROD-001", "PROD-002"],
+      "items": [
+        { "productId": "PROD-001", "quantity": 30, "unitPrice": 50 },
+        { "productId": "PROD-002", "quantity": 20, "unitPrice": 50 }
+      ],
+      "quantity": 50,
+      "value": 2500,
+      "status": "pending",
+      "orderDate": "2024-10-21T14:30:00Z",
+      "requestedDelivery": "2024-10-25T00:00:00Z"
+    },
+    {
+      "orderId": "ORD-002",
+      "customerId": "CUST-002",
+      "productIds": ["PROD-001"],
+      "items": [
+        { "productId": "PROD-001", "quantity": 75, "unitPrice": 50 }
+      ],
+      "quantity": 75,
+      "value": 3750,
+      "status": "pending",
+      "orderDate": "2024-10-22T09:15:00Z",
+      "requestedDelivery": "2024-10-26T00:00:00Z"
+    },
+    {
+      "orderId": "ORD-003",
+      "customerId": "CUST-003",
+      "productIds": ["PROD-003"],
+      "items": [
+        { "productId": "PROD-003", "quantity": 30, "unitPrice": 60 }
+      ],
+      "quantity": 30,
+      "value": 1800,
+      "status": "pending",
+      "orderDate": "2024-10-22T11:45:00Z",
+      "requestedDelivery": "2024-10-24T00:00:00Z"
+    }
+  ],
+  "suppliers": [
+    {
+      "supplierId": "SUP-001",
+      "name": "Global Components Inc",
+      "status": "active",
+      "reliabilityScore": 0.92,
+      "leadTime": 5,
+      "products": ["PROD-001", "PROD-002"],
+      "location": "Asia",
+      "contactInfo": {
+        "email": "orders@globalcomponents.com",
+        "phone": "+1-555-0101"
+      }
+    },
+    {
+      "supplierId": "SUP-002",
+      "name": "Regional Supply Co",
+      "status": "active",
+      "reliabilityScore": 0.85,
+      "leadTime": 3,
+      "products": ["PROD-001", "PROD-003"],
+      "location": "North America",
+      "contactInfo": {
+        "email": "supply@regionalsupply.com",
+        "phone": "+1-555-0102"
+      }
+    },
+    {
+      "supplierId": "SUP-003",
+      "name": "Fast Track Logistics",
+      "status": "backup",
+      "reliabilityScore": 0.78,
+      "leadTime": 7,
+      "products": ["PROD-002", "PROD-003"],
+      "location": "Europe",
+      "contactInfo": {
+        "email": "orders@fasttrack.eu",
+        "phone": "+44-20-5555-0103"
+      }
+    }
+  ],
+  "logistics": [
+    {
+      "shipmentId": "SHIP-001",
+      "orderId": "ORD-001",
+      "status": "in_transit",
+      "origin": "WH-EAST",
+      "destination": "Customer Location A",
+      "estimatedDelivery": "2024-10-25T16:00:00Z",
+      "carrier": "Express Logistics",
+      "trackingNumber": "EL123456789"
+    },
+    {
+      "shipmentId": "SHIP-002",
+      "orderId": "ORD-002",
+      "status": "preparing",
+      "origin": "WH-WEST",
+      "destination": "Customer Location B",
+      "estimatedDelivery": "2024-10-26T14:00:00Z",
+      "carrier": "Standard Shipping",
+      "trackingNumber": "SS987654321"
+    }
+  ],
+  "demandForecast": [
+    {
+      "productId": "PROD-001",
+      "forecastDate": "2024-10-23",
+      "predictedDemand": 120,
+      "confidence": 0.85,
+      "seasonalFactor": 1.1,
+      "trendFactor": 1.05,
+      "createdAt": "2024-10-22T10:00:00Z"
+    },
+    {
+      "productId": "PROD-002",
+      "forecastDate": "2024-10-23",
+      "predictedDemand": 45,
+      "confidence": 0.78,
+      "seasonalFactor": 0.95,
+      "trendFactor": 1.02,
+      "createdAt": "2024-10-22T10:00:00Z"
+    },
+    {
+      "productId": "PROD-003",
+      "forecastDate": "2024-10-23",
+      "predictedDemand": 35,
+      "confidence": 0.72,
+      "seasonalFactor": 1.2,
+      "trendFactor": 0.98,
+      "createdAt": "2024-10-22T10:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "manifestVersion": "1.0",
+  "agentCoreConfiguration": {
+    "serviceName": "SupplySense",
+    "version": "1.0.0",
+    "description": "Multi-Agent Supply Chain Resilience System",
+    "agents": [
+      {
+        "agentId": "inventory-agent",
+        "name": "Inventory Intelligence Agent",
+        "description": "Analyzes inventory levels, stock availability, and reordering needs",
+        "modelConfiguration": {
+          "modelId": "amazon.nova-micro-v1:0",
+          "temperature": 0.1,
+          "maxTokens": 2048
+        },
+        "tools": [
+          {
+            "name": "analyze_inventory",
+            "description": "Comprehensive inventory analysis across all locations and products"
+          },
+          {
+            "name": "check_availability", 
+            "description": "Check product availability for specific quantities and locations"
+          },
+          {
+            "name": "reserve_stock",
+            "description": "Reserve inventory for pending orders or allocations"
+          }
+        ],
+        "systemPrompt": "You are the Inventory Intelligence Agent for SupplySense. Your role is to analyze inventory levels, check product availability, and manage stock reservations. Always provide specific data-driven insights with confidence levels.",
+        "guardrails": {
+          "maxExecutionTime": 30,
+          "allowedActions": ["read", "reserve"],
+          "restrictedActions": ["delete", "transfer"]
+        }
+      },
+      {
+        "agentId": "demand-agent",
+        "name": "Demand Forecasting Agent", 
+        "description": "Provides demand forecasting, pattern analysis, and surge detection",
+        "modelConfiguration": {
+          "modelId": "amazon.nova-lite-v1:0",
+          "temperature": 0.2,
+          "maxTokens": 3072
+        },
+        "tools": [
+          {
+            "name": "forecast_demand",
+            "description": "Generate ML-powered demand forecasts for products and time periods"
+          },
+          {
+            "name": "analyze_demand_patterns",
+            "description": "Analyze historical demand patterns and identify trends"
+          },
+          {
+            "name": "detect_demand_surge",
+            "description": "Detect unusual demand spikes and assess capacity impact"
+          }
+        ],
+        "systemPrompt": "You are the Demand Forecasting Agent for SupplySense. You specialize in predicting future demand, analyzing patterns, and detecting anomalies. Provide forecasts with confidence intervals and explain your reasoning.",
+        "guardrails": {
+          "maxExecutionTime": 45,
+          "allowedActions": ["read", "analyze", "forecast"],
+          "restrictedActions": ["modify", "delete"]
+        }
+      },
+      {
+        "agentId": "orchestrator-agent",
+        "name": "Supply Chain Orchestrator Agent",
+        "description": "Coordinates multi-agent workflows and synthesizes comprehensive responses",
+        "modelConfiguration": {
+          "modelId": "amazon.nova-pro-v1:0",
+          "temperature": 0.3,
+          "maxTokens": 4096
+        },
+        "tools": [
+          {
+            "name": "orchestrate_fulfillment",
+            "description": "Coordinate multiple agents to analyze fulfillment capacity and requirements"
+          },
+          {
+            "name": "create_action_plan",
+            "description": "Generate comprehensive action plans based on multi-agent analysis"
+          },
+          {
+            "name": "synthesize_multi_agent_response",
+            "description": "Synthesize responses from multiple agents into coherent recommendations"
+          }
+        ],
+        "systemPrompt": "You are the Supply Chain Orchestrator Agent for SupplySense. You coordinate other agents, synthesize their findings, and create comprehensive action plans. Focus on practical recommendations with clear priorities and timelines.",
+        "guardrails": {
+          "maxExecutionTime": 60,
+          "allowedActions": ["read", "coordinate", "synthesize", "recommend"],
+          "restrictedActions": ["execute", "modify"]
+        }
+      },
+      {
+        "agentId": "logistics-agent",
+        "name": "Logistics Optimization Agent",
+        "description": "Optimizes routing, shipping options, and delivery logistics",
+        "modelConfiguration": {
+          "modelId": "amazon.nova-lite-v1:0", 
+          "temperature": 0.1,
+          "maxTokens": 2048
+        },
+        "tools": [
+          {
+            "name": "optimize_routes",
+            "description": "Calculate optimal routing for deliveries and shipments"
+          },
+          {
+            "name": "calculate_shipping_options",
+            "description": "Analyze shipping options with cost, time, and reliability factors"
+          }
+        ],
+        "systemPrompt": "You are the Logistics Optimization Agent for SupplySense. You optimize routes, calculate shipping options, and ensure efficient delivery logistics. Always consider cost, time, and reliability trade-offs.",
+        "guardrails": {
+          "maxExecutionTime": 30,
+          "allowedActions": ["read", "calculate", "optimize"],
+          "restrictedActions": ["execute", "modify"]
+        }
+      },
+      {
+        "agentId": "risk-agent",
+        "name": "Risk Assessment Agent",
+        "description": "Assesses supply chain risks and analyzes disruption impacts",
+        "modelConfiguration": {
+          "modelId": "amazon.nova-pro-v1:0",
+          "temperature": 0.2,
+          "maxTokens": 4096
+        },
+        "tools": [
+          {
+            "name": "assess_supply_chain_risks",
+            "description": "Comprehensive risk assessment across suppliers, logistics, and demand"
+          },
+          {
+            "name": "analyze_disruption_impact",
+            "description": "Analyze the impact of specific disruptions on supply chain operations"
+          }
+        ],
+        "systemPrompt": "You are the Risk Assessment Agent for SupplySense. You identify, assess, and quantify supply chain risks. Provide risk scores, impact assessments, and mitigation strategies with clear reasoning.",
+        "guardrails": {
+          "maxExecutionTime": 45,
+          "allowedActions": ["read", "assess", "analyze"],
+          "restrictedActions": ["execute", "modify"]
+        }
+      }
+    ],
+    "coordination": {
+      "patterns": {
+        "parallel_with_synthesis": {
+          "description": "Execute multiple agents in parallel, then synthesize with orchestrator",
+          "agents": ["inventory", "demand", "logistics", "risk", "orchestrator"],
+          "executionOrder": "parallel_then_sequential"
+        },
+        "sequential_with_coordination": {
+          "description": "Execute agents sequentially with coordination between steps",
+          "agents": ["inventory", "demand", "risk", "orchestrator"],
+          "executionOrder": "sequential"
+        },
+        "single_agent": {
+          "description": "Single agent execution for simple queries",
+          "executionOrder": "single"
+        }
+      }
+    },
+    "dataAccess": {
+      "dynamodbTables": [
+        "supplysense-inventory",
+        "supplysense-orders", 
+        "supplysense-suppliers",
+        "supplysense-logistics",
+        "supplysense-demand-forecast"
+      ],
+      "permissions": {
+        "read": ["all"],
+        "write": ["supplysense-inventory:reserve", "supplysense-demand-forecast"],
+        "restricted": ["supplysense-orders:delete", "supplysense-suppliers:modify"]
+      }
+    },
+    "monitoring": {
+      "cloudWatchLogs": true,
+      "metricsEnabled": true,
+      "tracingEnabled": true,
+      "customMetrics": [
+        "agent_execution_time",
+        "coordination_success_rate", 
+        "confidence_scores",
+        "error_rates"
+      ]
+    }
+  }
+}

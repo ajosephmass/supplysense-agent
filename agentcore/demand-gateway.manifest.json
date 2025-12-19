@@ -1,0 +1,27 @@
+{
+  "schema": "2024-09-01",
+  "name": "supplysense-demand-gateway",
+  "tools": [
+    {
+      "name": "forecast_demand",
+      "method": "POST",
+      "url": "/v1/demand/forecast",
+      "description": "Generate demand forecast for products based on historical data and patterns. JSON body: {product_id, timeframe, include_seasonality?}."
+    },
+    {
+      "name": "analyze_demand_patterns",
+      "method": "POST",
+      "url": "/v1/demand/patterns", 
+      "description": "Analyze historical demand patterns and trends for products. JSON body: {product_id?, analysis_type?}."
+    },
+    {
+      "name": "detect_demand_surge",
+      "method": "POST",
+      "url": "/v1/demand/surge",
+      "description": "Detect unusual demand patterns and surges in recent orders. JSON body: {time_window?, sensitivity?}."
+    }
+  ],
+  "auth": {
+    "type": "iam"
+  }
+}

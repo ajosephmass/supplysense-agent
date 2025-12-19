@@ -1,0 +1,27 @@
+{
+  "schema": "2024-09-01",
+  "name": "supplysense-orchestrator-gateway",
+  "tools": [
+    {
+      "name": "orchestrate_fulfillment",
+      "method": "POST",
+      "url": "/v1/orchestrator/fulfillment",
+      "description": "Orchestrate multi-agent analysis to determine fulfillment capability for orders. JSON body: {timeframe?, order_ids?, constraints?}."
+    },
+    {
+      "name": "create_action_plan",
+      "method": "POST",
+      "url": "/v1/orchestrator/action-plan",
+      "description": "Create comprehensive action plans for supply chain scenarios. JSON body: {scenario, priority?, constraints?}."
+    },
+    {
+      "name": "synthesize_multi_agent_response",
+      "method": "POST",
+      "url": "/v1/orchestrator/synthesize",
+      "description": "Synthesize responses from multiple agents into a comprehensive answer. JSON body: {agent_responses, original_query, context?}."
+    }
+  ],
+  "auth": {
+    "type": "iam"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "2024-09-01",
+  "name": "supplysense-inventory-gateway",
+  "tools": [
+    {
+      "name": "analyze_inventory",
+      "method": "POST",
+      "url": "/v1/inventory/analyze",
+      "description": "Analyze current inventory levels across all locations and identify issues. Optional JSON body: {location_filter, include_forecasts}."
+    },
+    {
+      "name": "check_availability",
+      "method": "POST", 
+      "url": "/v1/inventory/availability",
+      "description": "Check product availability for specific quantities at specific or all locations. JSON body: {product_id, quantity, location_id?}."
+    },
+    {
+      "name": "reserve_stock",
+      "method": "POST",
+      "url": "/v1/inventory/reserve",
+      "description": "Reserve inventory for orders at a specific location. JSON body: {product_id, location_id, quantity, order_id?}."
+    }
+  ],
+  "auth": {
+    "type": "iam"
+  }
+}
