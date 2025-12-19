@@ -1,20 +1,12 @@
 # SupplySense Multi-Agent Supply Chain Intelligence System
 
-## Specification Overview
+## 1. System Architecture
 
-This specification defines a production-ready multi-agent system using **Amazon Bedrock AgentCore** for supply chain management. The system provides real-time streaming responses, autonomous action execution, and workflow notifications.
-
-**Spec-Driven Development**: This specification was authored using Kiro and serves as the single source of truth for the SupplySense implementation. All code, infrastructure, and integrations follow this spec.
-
----
-
-## System Architecture
-
-### High-Level Architecture
+### 1.1 High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              SupplySense UI                                  │
+│                              SupplySense UI                                 │
 │                    (Next.js Static Export on S3/CloudFront)                 │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
@@ -29,48 +21,48 @@ This specification defines a production-ready multi-agent system using **Amazon 
 │                    Amazon Bedrock AgentCore Orchestrator                    │
 │                         (amazon.nova-pro-v1:0)                              │
 │                                                                             │
-│    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│    │  Inventory   │  │   Demand     │  │  Logistics   │  │    Risk      │  │
-│    │    Agent     │  │    Agent     │  │    Agent     │  │    Agent     │  │
-│    │  (nova-pro)  │  │ (nova-lite)  │  │ (nova-lite)  │  │  (nova-pro)  │  │
-│    └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
+│    │  Inventory   │  │   Demand     │  │  Logistics   │  │    Risk      │   │
+│    │    Agent     │  │    Agent     │  │    Agent     │  │    Agent     │   │
+│    │  (nova-pro)  │  │ (nova-lite)  │  │ (nova-lite)  │  │  (nova-pro)  │   │
+│    └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘   │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Data Layer                                      │
+│                              Data Layer                                     │
 │                                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  Inventory  │  │   Orders    │  │  Logistics  │  │  Suppliers  │        │
-│  │   Table     │  │   Table     │  │   Table     │  │   Table     │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │  Inventory  │  │   Orders    │  │  Logistics  │  │  Suppliers  │         │
+│  │   Table     │  │   Table     │  │   Table     │  │   Table     │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘         │
 │                                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                         │
-│  │   Actions   │  │  Approvals  │  │   Demand    │                         │
-│  │   Table     │  │   Table     │  │  Forecast   │                         │
-│  └─────────────┘  └─────────────┘  └─────────────┘                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                          │
+│  │   Actions   │  │  Approvals  │  │   Demand    │                          │
+│  │   Table     │  │   Table     │  │  Forecast   │                          │
+│  └─────────────┘  └─────────────┘  └─────────────┘                          │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        Notification Layer                                    │
-│                                                                             │
+┌────────────────────────────────────────────────────────────────────────────┐
+│                        Notification Layer                                  │
+│                                                                            │
 │  ┌─────────────────────┐    ┌─────────────────────┐                        │
-│  │  SNS Action Events  │───▶│   SQS Notification  │                        │
+│  │  SNS Action Events  │───▶│   SQS Notification │                         │
 │  │       Topic         │    │       Queue         │                        │
 │  └─────────────────────┘    └─────────────────────┘                        │
 │  ┌─────────────────────┐              │                                    │
 │  │ SNS Approval Events │──────────────┘                                    │
 │  │       Topic         │                                                   │
 │  └─────────────────────┘                                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 1. Agent Layer (Amazon Bedrock AgentCore)
+## 2. Agent Layer (Amazon Bedrock AgentCore)
 
-### 1.1 Inventory Agent
+### 2.1 Inventory Agent
 - **Runtime ID**: `SupplySenseInventory-{hash}`
 - **Model**: `amazon.nova-pro-v1:0`
 - **Purpose**: Analyze inventory levels, check product availability, provide reorder recommendations
@@ -82,7 +74,7 @@ This specification defines a production-ready multi-agent system using **Amazon 
 - **Response Format**: JSON with `highlightSummary` (2-3 sentences) and `detailedSummary` (5-8 sentences)
 - **Data Sources**: DynamoDB `supplysense-inventory`, `supplysense-orders`
 
-### 1.2 Demand Agent
+### 2.2 Demand Agent
 - **Runtime ID**: `SupplySenseDemand-{hash}`
 - **Model**: `amazon.nova-lite-v1:0`
 - **Purpose**: Generate demand forecasts, identify patterns, detect demand surges
@@ -94,7 +86,7 @@ This specification defines a production-ready multi-agent system using **Amazon 
 - **Response Format**: JSON with revenue/margin analysis and product-level details
 - **Data Sources**: DynamoDB `supplysense-orders`, `supplysense-demand-forecast`
 
-### 1.3 Logistics Agent
+### 2.3 Logistics Agent
 - **Runtime ID**: `SupplySenseLogistics-{hash}`
 - **Model**: `amazon.nova-lite-v1:0`
 - **Purpose**: Optimize delivery routes, calculate shipping options, coordinate logistics
@@ -105,7 +97,7 @@ This specification defines a production-ready multi-agent system using **Amazon 
 - **Response Format**: JSON with capacity metrics and route assignments
 - **Data Sources**: DynamoDB `supplysense-orders`, `supplysense-logistics`
 
-### 1.4 Risk Agent
+### 2.4 Risk Agent
 - **Runtime ID**: `SupplySenseRisk-{hash}`
 - **Model**: `amazon.nova-pro-v1:0`
 - **Purpose**: Assess supply chain risks, identify vulnerabilities
@@ -115,7 +107,7 @@ This specification defines a production-ready multi-agent system using **Amazon 
   - `generate_mitigation_plan()` - Generate risk mitigation strategies
 - **Response Format**: JSON with risk scores and mitigation strategies
 
-### 1.5 Orchestrator Agent
+### 2.5 Orchestrator Agent
 - **Runtime ID**: `SupplySenseOrchestrator-{hash}`
 - **Runtime Endpoint**: `DEFAULT` (created by AgentCore)
 - **Model**: `amazon.nova-pro-v1:0`
@@ -139,9 +131,9 @@ This specification defines a production-ready multi-agent system using **Amazon 
 
 ---
 
-## 2. Chat Service Layer (ECS Fargate)
+## 3. Chat Service Layer (ECS Fargate)
 
-### 2.1 Flask Application
+### 3.1 Flask Application
 - **Purpose**: Passthrough service between UI and AgentCore agents
 - **Container**: Python 3.11 Flask app on ECS Fargate
 - **AgentCore Integration**: Uses `HttpBedrockAgentCoreClient` for agent invocation
@@ -154,7 +146,7 @@ This specification defines a production-ready multi-agent system using **Amazon 
   - Publish SNS events when actions are completed or approvals are decided
   - **NOT responsible for**: LLM calls, notification generation, orchestration logic
 
-### 2.2 AgentCore Communication Pattern
+### 3.2 AgentCore Communication Pattern
 ```python
 # SSM Parameter Structure
 /supplysense/agents/{agent_type}/runtime-id     # Runtime ID (e.g., SupplySenseOrchestrator-abc123)
@@ -171,7 +163,7 @@ This specification defines a production-ready multi-agent system using **Amazon 
 3. Call http_client.invoke_endpoint(agent_arn=runtime_arn, endpoint_name='DEFAULT', ...)
 ```
 
-### 2.3 Action/Approval Workflow
+### 3.3 Action/Approval Workflow
 ```
 User Query → Chat Service → Orchestrator Agent (creates actions WITH notifications)
                 ↓
@@ -184,15 +176,15 @@ User Query → Chat Service → Orchestrator Agent (creates actions WITH notific
 
 ---
 
-## 3. Notification Layer (SNS/SQS)
+## 4. Notification Layer (SNS/SQS)
 
-### 3.1 SNS Topics
+### 4.1 SNS Topics
 - **Action Events Topic**: `supplysense-action-events-{account}-{region}`
   - Receives notifications when actions are marked complete
 - **Approval Events Topic**: `supplysense-approval-events-{account}-{region}`
   - Receives notifications when approvals are approved/rejected
 
-### 3.2 SQS Queue
+### 4.2 SQS Queue
 - **Notification Queue**: `supplysense-notifications-{account}-{region}`
   - Subscribed to both SNS topics
   - Retains messages for 7 days
@@ -200,7 +192,7 @@ User Query → Chat Service → Orchestrator Agent (creates actions WITH notific
 
 **Note**: The SNS/SQS integration is included for demonstrative purposes to show how agents can interact with external APIs, messaging systems, and third-party applications. In a production environment, you would subscribe actual email endpoints, Lambda functions, or external systems to these topics.
 
-### 3.3 Message Format
+### 4.3 Message Format
 ```json
 {
   "subject": "[SupplySense] Action Complete: Draft emergency purchase orders",
@@ -210,9 +202,9 @@ User Query → Chat Service → Orchestrator Agent (creates actions WITH notific
 
 ---
 
-## 4. Data Layer (DynamoDB)
+## 5. Data Layer (DynamoDB)
 
-### 4.1 Tables
+### 5.1 Tables
 | Table Name | Purpose | Key Schema |
 |------------|---------|------------|
 | `supplysense-inventory` | Product inventory across locations | `productId` (PK), `locationId` (SK) |
@@ -226,14 +218,14 @@ User Query → Chat Service → Orchestrator Agent (creates actions WITH notific
 
 ---
 
-## 5. UI Layer (S3 + CloudFront)
+## 6. UI Layer (S3 + CloudFront)
 
-### 5.1 Hosting
+### 6.1 Hosting
 - **Storage**: S3 bucket with static website hosting
 - **CDN**: CloudFront distribution with custom domain support
 - **Build**: Next.js static export via CodeBuild
 
-### 5.2 Features
+### 6.2 Features
 - Real-time streaming responses from agents
 - Agent highlights (2-3 sentence summaries)
 - Agent insights (5-8 sentence detailed analysis with metrics)
@@ -245,17 +237,9 @@ User Query → Chat Service → Orchestrator Agent (creates actions WITH notific
 - Approval workflow with approve/reject buttons
 - Duplicate action prevention (shows "Already Completed" for previously taken actions)
 
-### 5.3 API Proxy
+### 6.3 API Proxy
 - CloudFront `/api/*` routes to ALB for chat service
 - Enables same-origin API calls from UI
-
----
-
-## 6. Authentication Layer (Cognito)
-
-- **User Pool**: Manages user registration and authentication
-- **JWT Tokens**: Used for API authorization
-- **Session Management**: Tracks user sessions across requests
 
 ---
 
@@ -303,81 +287,14 @@ Each query type gets a context-appropriate response.
 
 ---
 
-## 8. Deployment Architecture
+## 8. Monitoring & Logging
 
-### 8.1 Infrastructure Stacks (AWS CDK)
-1. **SupplySenseTablesStack**: DynamoDB tables
-2. **SupplySenseAgentCoreStack**: All 5 AgentCore agents + Cognito authentication + SSM parameters
-3. **SupplySenseChatStack**: ECS service, ALB, SNS topics, SQS queue, UI (S3 + CloudFront)
-
-### 8.2 Deployment Order
-```bash
-npx cdk deploy SupplySenseTablesStack
-npx cdk deploy SupplySenseAgentCoreStack  # Creates agents, Cognito, SSM parameters
-npx cdk deploy SupplySenseChatStack       # Uses Cognito and SSM parameters from AgentCoreStack
-```
-
-### 8.3 Post-Deployment
-```bash
-# Seed sample data
-node scripts/seed-data.js
-
-# Verify SSM parameters
-aws ssm get-parameters-by-path --path /supplysense/agents --recursive
-
-# View SQS messages (for notification verification)
-aws sqs receive-message --queue-url <QUEUE_URL> --max-number-of-messages 10
-```
-
----
-
-## 9. Monitoring & Logging
-
-### 9.1 CloudWatch Log Groups
+### 8.1 CloudWatch Log Groups
 - `/ecs/supplysense-chat-orchestration-{account}-{region}`: Chat service logs
 - `/aws/lambda/SupplySense*`: Agent runtime logs
 - `/aws/codebuild/SupplySense*`: Build logs
 
-### 9.2 SNS/SQS Verification
+### 8.2 SNS/SQS Verification
 1. **SQS Queue**: Inspect messages directly in AWS Console or via CLI
 2. **CloudWatch Metrics**: Monitor `NumberOfMessagesPublished` for SNS topics
 3. **ECS Logs**: Show SNS publish calls with full message content
-
----
-
-## 10. Sample Queries
-
-The system is designed to answer analytical questions about supply chain status:
-
-- "Can I fulfill all customer orders this week given current inventory?"
-- "What is the current inventory status across all warehouses?"
-- "Which SKUs are at risk of stockout in the next 7 days?"
-- "What is the revenue impact if we have supply delays?"
-- "Are there any logistics constraints for pending orders?"
-- "What is the overall risk posture for our supply chain?"
-- "Do I need to expedite any inbound shipments?"
-
----
-
-## 11. Future Enhancements
-
-1. Multi-warehouse optimization
-2. Predictive analytics with ML models
-3. Automated supplier negotiations
-4. Real-time inventory tracking integrations
-5. Advanced forecasting models
-6. Lambda-based tool implementations for scalability
-7. Third-party API integrations (ERP, WMS, TMS)
-
----
-
-## 12. Production Considerations
-
-This specification is designed for learning and demonstration purposes. For production deployment, consider:
-
-1. **Security**: Implement VPC endpoints, WAF rules, and encryption at rest
-2. **Scalability**: Externalize tools to Lambda functions, implement caching
-3. **Monitoring**: Add detailed metrics, alarms, and dashboards
-4. **Data**: Connect to real inventory, order, and logistics systems
-5. **Testing**: Implement comprehensive integration and load testing
-6. **CI/CD**: Set up proper deployment pipelines with staging environments
